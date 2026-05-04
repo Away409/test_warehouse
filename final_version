@@ -8,6 +8,8 @@ const int ROWS = 40;    // 行数
 const int COLS = 60;    // 列数
 const int CELL = 15;    // 每个细胞像素大小
 
+int delayTime=100;      //第三次修改新增的演化间隔，这个值越小演化越快
+
 class CellGame {
 private:
     bool curr[ROWS][COLS];
@@ -107,26 +109,36 @@ int main() {
     while (true) {
         // 按键检测
 
-        // 空格：开始/暂停
-    if (GetAsyncKeyState(VK_SPACE) & 0x8000) {
-        if (!spacePressed) {
-            isRun = !isRun;
-            spacePressed = true;
+        // 上键加速、下键减速(新增功能，使操作时更为方便)
+        if (GetAsyncKeyState(VK_UP) & 0x8000)
+        {
+            if(delayTime > 20) delayTime -= 10;
         }
-    } else {
-        spacePressed = false;
-    }
+        if (GetAsyncKeyState(VK_DOWN) & 0x8000)
+        {
+            if(delayTime < 500) delayTime += 10;
+        }
 
-    // C键：清空画布
-    if (GetAsyncKeyState('C') & 0x8000) {
-        if (!cPressed) {
-            game.clear();
-            isRun = false;
-            cPressed = true;
+        // 空格：开始/暂停
+        if (GetAsyncKeyState(VK_SPACE) & 0x8000) {
+            if (!spacePressed) {
+                isRun = !isRun;
+                spacePressed = true;
+            }
+        } else {
+            spacePressed = false;
         }
-    } else {
-        cPressed = false;
-    }//第二次改动后的键盘检测逻辑
+
+        // C键：清空画布
+        if (GetAsyncKeyState('C') & 0x8000) {
+            if (!cPressed) {
+                game.clear();
+                isRun = false;
+                cPressed = true;
+            }
+        } else {
+            cPressed = false;
+        }//第二次改动后的键盘检测逻辑
 
         // 鼠标操作
         if (MouseHit()) {
@@ -140,7 +152,7 @@ int main() {
         // 运行时更新
         if (isRun) {
             game.update();
-            Sleep(100);
+            Sleep(delayTime);       //将括弧里面的常数100修改为delayTime
         }
 
         // 绘制在离屏缓冲区
