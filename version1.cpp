@@ -100,16 +100,33 @@ int main() {
 
     bool isRun = false;
 
+    bool spacePressed = false;  // 空格防抖
+    bool cPressed = false;      // C键防抖
+    //这两行为第二次新增的键盘防抖变量
+
     while (true) {
         // 按键检测
-        if (_kbhit()) {
-            char ch = _getch();
-            if (ch == ' ') isRun = !isRun;
-            if (ch == 'c' || ch == 'C') {
-                game.clear();
-                isRun = false;
-            }
+
+        // 空格：开始/暂停
+    if (GetAsyncKeyState(VK_SPACE) & 0x8000) {
+        if (!spacePressed) {
+            isRun = !isRun;
+            spacePressed = true;
         }
+    } else {
+        spacePressed = false;
+    }
+
+    // C键：清空画布
+    if (GetAsyncKeyState('C') & 0x8000) {
+        if (!cPressed) {
+            game.clear();
+            isRun = false;
+            cPressed = true;
+        }
+    } else {
+        cPressed = false;
+    }//第二次改动后的键盘检测逻辑
 
         // 鼠标操作
         if (MouseHit()) {
