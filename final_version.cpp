@@ -1,3 +1,160 @@
+/*#include <graphics.h>
+#include <conio.h>
+#include <windows.h>
+#include <cstdlib>
+#include <ctime>
+
+const int ROWS = 40;    // 行数
+const int COLS = 60;    // 列数
+const int CELL = 15;    // 每个细胞像素大小
+
+class CellGame {
+private:
+    bool curr[ROWS][COLS];
+    bool next[ROWS][COLS];
+
+    int getNeighborCount(int x, int y) {
+        int cnt = 0;
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dy = -1; dy <= 1; dy++) {
+                if (dx == 0 && dy == 0) continue;
+                int nx = x + dx;
+                int ny = y + dy;
+                if (nx >= 0 && nx < ROWS && ny >= 0 && ny < COLS) {
+                    if (curr[nx][ny]) cnt++;
+                }
+            }
+        }
+        return cnt;
+    }
+
+public:
+    void init() {
+        srand((unsigned)time(NULL));
+        for (int i = 0; i < ROWS; i++) {
+            for (int j = 0; j < COLS; j++) {
+                curr[i][j] = (rand() % 100 < 15); // 15%概率活
+            }
+        }
+    }
+
+    void clear() {
+        for (int i = 0; i < ROWS; i++)
+            for (int j = 0; j < COLS; j++)
+                curr[i][j] = false;
+    }
+
+    void setCell(int x, int y, bool val) {
+        if (x >= 0 && x < ROWS && y >= 0 && y < COLS)
+            curr[x][y] = val;
+    }
+
+    void update() {
+        for (int i = 0; i < ROWS; i++) {
+            for (int j = 0; j < COLS; j++) {
+                int num = getNeighborCount(i, j);
+                if (curr[i][j]) {
+                    next[i][j] = (num == 2 || num == 3);
+                }
+                else {
+                    next[i][j] = (num == 3);
+                }
+            }
+        }
+        for (int i = 0; i < ROWS; i++)
+            for (int j = 0; j < COLS; j++)
+                curr[i][j] = next[i][j];
+    }
+
+    void draw() {
+        cleardevice(); // 清屏
+
+        // 画细胞
+        for (int i = 0; i < ROWS; i++) {
+            for (int j = 0; j < COLS; j++) {
+                int x = j * CELL;
+                int y = i * CELL;
+                if (curr[i][j]) {
+                    setfillcolor(RGB(100, 200, 255));
+                    solidrectangle(x, y, x + CELL - 1, y + CELL - 1);
+                }
+                else {
+                    setfillcolor(RGB(40, 40, 60));
+                    solidrectangle(x, y, x + CELL - 1, y + CELL - 1);
+                }
+            }
+        }
+
+        // 提示文字
+        setcolor(WHITE);
+        outtextxy(10, ROWS * CELL + 5, L"鼠标左键：画细胞 | 右键：清除 | 空格：开始/暂停 | C：清空");
+    }
+};
+
+int main() {
+    initgraph(COLS * CELL, ROWS * CELL + 30);
+    BeginBatchDraw(); // 开启双缓冲防闪烁
+
+    CellGame game;
+    game.init();
+
+    bool isRun = false;
+    bool spacePressed = false;
+    bool cPressed = false;
+
+    while (true) {
+        // ========== 按键处理（修复部分） ==========
+        // 空格：开始/暂停（防抖处理，防止按一下反复切换）
+        if (GetAsyncKeyState(VK_SPACE) & 0x8000) {
+            if (!spacePressed) {
+                isRun = !isRun;
+                spacePressed = true;
+            }
+        }
+        else {
+            spacePressed = false;
+        }
+
+        // C键：清空画布
+        if (GetAsyncKeyState('C') & 0x8000) {
+            if (!cPressed) {
+                game.clear();
+                isRun = false;
+                cPressed = true;
+            }
+        }
+        else {
+            cPressed = false;
+        }
+
+        // ========== 鼠标处理 ==========
+        if (MouseHit()) {
+            MOUSEMSG m = GetMouseMsg();
+            int x = m.y / CELL;
+            int y = m.x / CELL;
+            if (m.uMsg == WM_LBUTTONDOWN) {
+                game.setCell(x, y, true);
+            }
+            if (m.uMsg == WM_RBUTTONDOWN) {
+                game.setCell(x, y, false);
+            }
+        }
+
+        // ========== 游戏更新 ==========
+        if (isRun) {
+            game.update();
+            Sleep(100); // 控制演化速度，避免太快
+        }
+
+        // ========== 绘制 ==========
+        game.draw();
+        FlushBatchDraw(); // 一次性刷新到屏幕
+    }
+
+    closegraph();
+    return 0;
+}*/
+
 #include <graphics.h>
 #include <conio.h>
 #include <windows.h>
@@ -8,7 +165,8 @@ const int ROWS = 40;    // 行数
 const int COLS = 60;    // 列数
 const int CELL = 15;    // 每个细胞像素大小
 
-int delayTime=100;      //第三次修改新增的演化间隔，这个值越小演化越快
+int delayTime = 100;      //第三次修改新增的演化间隔，这个值越小演化越快
+bool isRun = false;     //第四次将其修改为全局变量
 
 class CellGame {
 private:
@@ -87,8 +245,26 @@ public:
             }
         }
 
+        // 绘制网格线（第四次修改新增，提升视觉效果）
+        setcolor(RGB(60, 60, 80));
+        // 横线
+        for (int i = 0; i <= ROWS; i++)
+        {
+            line(0, i * CELL, COLS * CELL, i * CELL);
+        }
+        // 竖线
+        for (int j = 0; j <= COLS; j++)
+        {
+            line(j * CELL, 0, j * CELL, ROWS * CELL);
+        }
+
         setcolor(WHITE);
         outtextxy(10, ROWS * CELL + 5, L"鼠标左键：画细胞 | 右键：清除 | 空格：开始/暂停 | C：清空");
+
+        // 状态与速度显示（第四次新增）
+        wchar_t buf[64];
+        swprintf(buf, 64, L"状态：%s  演化间隔：%dms", isRun ? L"运行中" : L"已暂停", delayTime);
+        outtextxy(200, ROWS * CELL + 5, buf);
     }
 };
 
@@ -100,7 +276,7 @@ int main() {
     CellGame game;
     game.init();
 
-    bool isRun = false;
+    
 
     bool spacePressed = false;  // 空格防抖
     bool cPressed = false;      // C键防抖
@@ -112,11 +288,11 @@ int main() {
         // 上键加速、下键减速(新增功能，使操作时更为方便)
         if (GetAsyncKeyState(VK_UP) & 0x8000)
         {
-            if(delayTime > 20) delayTime -= 10;
+            if (delayTime > 20) delayTime -= 10;
         }
         if (GetAsyncKeyState(VK_DOWN) & 0x8000)
         {
-            if(delayTime < 500) delayTime += 10;
+            if (delayTime < 500) delayTime += 10;
         }
 
         // 空格：开始/暂停
@@ -125,7 +301,8 @@ int main() {
                 isRun = !isRun;
                 spacePressed = true;
             }
-        } else {
+        }
+        else {
             spacePressed = false;
         }
 
@@ -136,7 +313,8 @@ int main() {
                 isRun = false;
                 cPressed = true;
             }
-        } else {
+        }
+        else {
             cPressed = false;
         }//第二次改动后的键盘检测逻辑
 
