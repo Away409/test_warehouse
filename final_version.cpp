@@ -11,6 +11,9 @@ const int CELL = 15;    // 每个细胞像素大小
 int delayTime = 100;      //第三次修改新增的演化间隔，这个值越小演化越快
 bool isRun = false;     //第四次将其修改为全局变量
 
+bool isPause = false;
+int liveCount = 0;      //第六次新增
+
 class CellGame {
 private:
     bool curr[ROWS][COLS];
@@ -69,6 +72,20 @@ public:
                 curr[i][j] = next[i][j];
     }
 
+    //第六次增加的统计函数
+    int getLiveCount()
+    {
+        int cnt = 0;
+        for (int i = 0; i < ROWS; i++)
+        {
+            for (int j = 0; j < COLS; j++)
+            {
+                if (curr[i][j]) cnt++;
+            }
+        }
+        return cnt;
+    }
+
     void draw() {
         // 只在开始时清一次背景，后续在双缓冲内绘制
         cleardevice();
@@ -101,6 +118,8 @@ public:
             line(j * CELL, 0, j * CELL, ROWS * CELL);
         }
 
+
+
         setcolor(WHITE);
         //outtextxy(10, ROWS * CELL + 5, L"鼠标左键：画细胞 | 右键：清除 | 空格：开始/暂停 | C：清空");
         outtextxy(5, ROWS * CELL + 5, L"左键：画 | 右键：擦 | 空格：启停 | C：清空");
@@ -110,8 +129,22 @@ public:
         wchar_t buf[64];
         swprintf(buf, 64, L"状态：%s  演化间隔：%dms", isRun ? L"运行中" : L"已暂停", delayTime);
         outtextxy(200, ROWS * CELL + 5, buf);
+
+        // 第六次新增：显示存活细胞数
+        liveCount = this->getLiveCount();
+        swprintf(buf, 64, L"存活细胞：%d", liveCount);
+        outtextxy(COLS * CELL - 110, 8, buf);
+
+        // 第六次新增：暂停状态文字提示
+        if (isPause)
+        {
+            setcolor(RGB(255, 200, 0));
+            outtextxy(COLS * CELL / 2 - 75, 8, L"已暂停 回车单步");
+        }
     }
 };
+
+
 
 //第五次新增控制开始/结束界面的函数
 void showStartUI()
@@ -122,20 +155,20 @@ void showStartUI()
     cleardevice();
 
     setcolor(WHITE);
-    // 大标题
     settextstyle(36, 0, L"微软雅黑");
     outtextxy(180, 160, L"生命游戏");
-
-    // 提示改成按回车
     settextstyle(20, 0, L"微软雅黑");
     outtextxy(160, 230, L"按 回车键 开始游戏");
+
+    // 第六次新增：开始界面操作提示
+    settextstyle(18, 0, L"微软雅黑");
+    outtextxy(150, 270, L"空格暂停 | 暂停时回车单步演化");
 
     FlushBatchDraw();
 
     // 等待回车键按下
     while (1)
     {
-        // VK_RETURN 就是回车
         if (GetAsyncKeyState(VK_RETURN) & 0x8000)
         {
             break;
@@ -146,7 +179,6 @@ void showStartUI()
 
 void showEndUI()
 {
-    // 关掉所有复杂东西，只画最稳定的界面
     cleardevice();
 
     // 红黑渐变背景
@@ -166,7 +198,7 @@ void showEndUI()
     // 强制刷新
     FlushBatchDraw();
 
-    // 死等，按 ESC 才退出
+    // 按 ESC 才退出
     while (1)
     {
         if (GetAsyncKeyState(VK_ESCAPE) & 1)
@@ -180,6 +212,7 @@ void showEndUI()
     exit(0);
 }
 
+
 int main() {
     initgraph(COLS * CELL, ROWS * CELL + 50);
     // 开启双缓冲防闪烁
@@ -189,7 +222,7 @@ int main() {
     CellGame game;
     game.init();
 
-    
+
 
     bool spacePressed = false;  // 空格防抖
     bool cPressed = false;      // C键防抖
@@ -208,15 +241,30 @@ int main() {
             if (delayTime < 500) delayTime += 10;
         }
 
-        // 空格：开始/暂停
-        if (GetAsyncKeyState(VK_SPACE) & 0x8000) {
-            if (!spacePressed) {
-                isRun = !isRun;
+        // 第六次新增：空格切换暂停状态
+        if (GetAsyncKeyState(VK_SPACE) & 0x8000)
+        {
+            if (!spacePressed)
+            {
+                isPause = !isPause;
+                // 暂停时停止自动演化，恢复时继续自动演化
+                isRun = !isPause;
                 spacePressed = true;
             }
         }
-        else {
+        else
+        {
             spacePressed = false;
+        }
+
+        // 第六次新增：暂停状态下按回车单步演化
+        if (isPause)
+        {
+            if (GetAsyncKeyState(VK_RETURN) & 0x8000)
+            {
+                game.update();
+                Sleep(180);
+            }
         }
 
         // C键：清空画布
@@ -224,6 +272,7 @@ int main() {
             if (!cPressed) {
                 game.clear();
                 isRun = false;
+                isPause = false;   // 第六次新增：清空同时取消暂停
                 cPressed = true;
             }
         }
@@ -236,6 +285,7 @@ int main() {
         {
             game.init();
             isRun = false;
+            isPause = false;   // 第六次新增：重置同时取消暂停
         }
 
         // ESC 退出（第五次新增）
@@ -245,7 +295,7 @@ int main() {
             //break;
         }
 
-        
+
         // 鼠标操作(第五次修改后支持按住鼠标左键连续创建细胞，按住右键连续消除细胞)
         if (MouseHit())
         {
@@ -259,19 +309,19 @@ int main() {
             }
             if (m.uMsg == WM_RBUTTONDOWN || m.uMsg == WM_MOUSEMOVE && (GetAsyncKeyState(VK_RBUTTON) & 0x8000))
             {
-                game.setCell(gx, gy, false);
+                game.setCell(gx,gy, false);
             }
         }
 
         // 运行时更新
-        if (isRun) {
+        if (isRun && !isPause) {
             game.update();
             Sleep(delayTime);       //将括弧里面的常数100修改为delayTime
         }
 
         // 绘制在离屏缓冲区
         game.draw();
-        // 一次性把画面刷新到屏幕上（关键！）
+        // 一次性把画面刷新到屏幕上
         FlushBatchDraw();
     }
 
